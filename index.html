@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Scraper</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e4e4e4;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #8892b0;
+            font-size: 1.1rem;
+        }
+
+        .input-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        .url-input {
+            flex: 1;
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .url-input:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+        }
+
+        .url-input::placeholder {
+            color: #6a7180;
+        }
+
+        .scrape-btn {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .scrape-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .scrape-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .scrape-btn .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        .scrape-btn.loading .spinner {
+            display: block;
+        }
+
+        .scrape-btn.loading .btn-text {
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .output-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .output-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #e4e4e4;
+        }
+
+        .output-meta {
+            font-size: 0.85rem;
+            color: #8892b0;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: transparent;
+            color: #8892b0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            color: #00d4ff;
+        }
+
+        .output-content {
+            padding: 1.5rem;
+            min-height: 400px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .markdown-body {
+            background: transparent !important;
+            color: #e4e4e4 !important;
+        }
+
+        .markdown-body h1,
+        .markdown-body h2,
+        .markdown-body h3,
+        .markdown-body h4,
+        .markdown-body h5,
+        .markdown-body h6 {
+            color: #fff !important;
+            border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .markdown-body a {
+            color: #00d4ff !important;
+        }
+
+        .markdown-body code {
+            background: rgba(0, 0, 0, 0.3) !important;
+            color: #00d4ff !important;
+        }
+
+        .markdown-body pre {
+            background: rgba(0, 0, 0, 0.4) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .markdown-body blockquote {
+            border-left-color: #7b2ff7 !important;
+            color: #8892b0 !important;
+        }
+
+        .markdown-body table tr {
+            background: transparent !important;
+            border-top-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .markdown-body table tr:nth-child(2n) {
+            background: rgba(0, 0, 0, 0.2) !important;
+        }
+
+        .markdown-body table th,
+        .markdown-body table td {
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .markdown-body hr {
+            background: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .markdown-body img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+
+        .raw-text {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #b0b0b0;
+            line-height: 1.6;
+        }
+
+        .placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: #6a7180;
+        }
+
+        .placeholder-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .placeholder-text {
+            font-size: 1.1rem;
+        }
+
+        .error-message {
+            background: rgba(255, 82, 82, 0.1);
+            border: 1px solid rgba(255, 82, 82, 0.3);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            color: #ff5252;
+            margin-bottom: 1rem;
+        }
+
+        .success-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 20px;
+            color: #00ff88;
+            font-size: 0.85rem;
+        }
+
+        /* Custom scrollbar */
+        .output-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .output-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        .output-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .output-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .scrape-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .output-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Web Scraper</h1>
+            <p class="subtitle">Extract clean, structured content from any webpage</p>
+        </header>
+
+        <div class="input-section">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    class="url-input" 
+                    id="urlInput" 
+                    placeholder="Enter URL to scrape (e.g., https://example.com)"
+                    autofocus
+                >
+                <button class="scrape-btn" id="scrapeBtn" onclick="scrapeUrl()">
+                    <span class="btn-text">Scrape</span>
+                    <div class="spinner"></div>
+                </button>
+            </div>
+        </div>
+
+        <div id="errorContainer" class="error-message hidden"></div>
+
+        <div class="output-section">
+            <div class="output-header">
+                <div>
+                    <span class="output-title" id="pageTitle">Output Preview</span>
+                    <div class="output-meta" id="pageMeta"></div>
+                </div>
+                <div class="tab-buttons">
+                    <button class="tab-btn active" data-tab="markdown" onclick="switchTab('markdown')">
+                        Markdown
+                    </button>
+                    <button class="tab-btn" data-tab="raw" onclick="switchTab('raw')">
+                        Raw Text
+                    </button>
+                </div>
+            </div>
+            <div class="output-content">
+                <div id="placeholderContent" class="placeholder">
+                    <div class="placeholder-icon">📄</div>
+                    <div class="placeholder-text">Enter a URL above and click "Scrape" to see results</div>
+                </div>
+                <div id="markdownContent" class="markdown-body hidden"></div>
+                <div id="rawContent" class="raw-text hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
+    <script>
+        // Configure marked for safe rendering
+        marked.setOptions({
+            breaks: true,
+            gfm: true
+        });
+
+        const urlInput = document.getElementById('urlInput');
+        const scrapeBtn = document.getElementById('scrapeBtn');
+        const errorContainer = document.getElementById('errorContainer');
+        const pageTitle = document.getElementById('pageTitle');
+        const pageMeta = document.getElementById('pageMeta');
+        const placeholderContent = document.getElementById('placeholderContent');
+        const markdownContent = document.getElementById('markdownContent');
+        const rawContent = document.getElementById('rawContent');
+
+        let currentData = null;
+        let currentTab = 'markdown';
+
+        // Handle Enter key
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                scrapeUrl();
+            }
+        });
+
+        async function scrapeUrl() {
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showError('Please enter a URL to scrape');
+                return;
+            }
+
+            // Reset UI
+            hideError();
+            setLoading(true);
+
+            try {
+                const response = await fetch('/api/scrape', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Failed to scrape URL');
+                }
+
+                if (data.success) {
+                    currentData = data;
+                    displayResults(data);
+                } else {
+                    throw new Error(data.error || 'Unknown error occurred');
+                }
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function displayResults(data) {
+            // Update title
+            pageTitle.innerHTML = `
+                <span class="success-badge">✓ Scraped</span>
+                ${escapeHtml(data.title)}
+            `;
+            
+            // Update meta
+            pageMeta.innerHTML = `<a href="${escapeHtml(data.url)}" target="_blank" style="color: #00d4ff;">${escapeHtml(data.url)}</a>`;
+
+            // Hide placeholder
+            placeholderContent.classList.add('hidden');
+
+            // Render markdown
+            markdownContent.innerHTML = marked.parse(data.markdown);
+
+            // Set raw text
+            rawContent.textContent = data.markdown;
+
+            // Show current tab content
+            switchTab(currentTab);
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tab);
+            });
+
+            // Show/hide content
+            if (currentData) {
+                markdownContent.classList.toggle('hidden', tab !== 'markdown');
+                rawContent.classList.toggle('hidden', tab !== 'raw');
+            }
+        }
+
+        function setLoading(loading) {
+            scrapeBtn.classList.toggle('loading', loading);
+            scrapeBtn.disabled = loading;
+            urlInput.disabled = loading;
+        }
+
+        function showError(message) {
+            errorContainer.textContent = message;
+            errorContainer.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorContainer.classList.add('hidden');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
