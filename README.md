@@ -12,14 +12,27 @@ A full-stack web scraping application that extracts clean, structured content fr
 
 ## Quick Start
 
-### Using Docker (Recommended)
+### Using Docker Compose (Recommended)
 
 ```bash
-# Build and run with a single command
-docker build -t webscraper . && docker run -p 8001:8001 webscraper
+# Start the application
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the application
+docker-compose down
 ```
 
 Then open http://localhost:8001 in your browser.
+
+### Using Docker
+
+```bash
+# Build and run with a single command
+docker build -t webscraper . && docker run -p 8001:8001 -v ./outputs:/app/outputs webscraper
+```
 
 ### Local Development
 

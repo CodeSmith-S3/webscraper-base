@@ -17,21 +17,57 @@ class WebScraper:
         self.timeout = timeout
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Language': 'en-US,en;q=0.9',
             'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0',
+            'sec-ch-ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
         })
     
     def fetch_page(self, url: str) -> Optional[str]:
         """Fetch the HTML content of a page."""
         try:
-            response = self.session.get(url, timeout=self.timeout)
+            response = self.session.get(
+                url, 
+                timeout=self.timeout,
+                allow_redirects=True,
+                verify=True
+            )
             response.raise_for_status()
-            response.encoding = response.apparent_encoding
+            response.encoding = response.apparent_encoding or 'utf-8'
             return response.text
-        except requests.RequestException as e:
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code if e.response else 'Unknown'
+            if status_code == 404:
+                raise Exception(f"Page not found (404): The URL '{url}' does not exist")
+            elif status_code == 403:
+                raise Exception(f"Access forbidden (403): The website blocked access to '{url}'")
+            elif status_code == 401:
+                raise Exception(f"Unauthorized (401): This page requires authentication")
+            elif status_code == 500:
+                raise Exception(f"Server error (500): The website encountered an internal error")
+            elif status_code == 503:
+                raise Exception(f"Service unavailable (503): The website is temporarily down")
+            else:
+                raise Exception(f"HTTP Error {status_code}: Failed to fetch '{url}'")
+        except requests.exceptions.SSLError:
+            raise Exception(f"SSL Error: Could not establish secure connection to '{url}'")
+        except requests.exceptions.ConnectionError:
+            raise Exception(f"Connection failed: Could not connect to '{url}'. Check if the URL is correct.")
+        except requests.exceptions.Timeout:
+            raise Exception(f"Timeout: The website took too long to respond")
+        except requests.exceptions.TooManyRedirects:
+            raise Exception(f"Too many redirects: The URL has a redirect loop")
+        except requests.exceptions.RequestException as e:
             raise Exception(f"Failed to fetch URL: {str(e)}")
     
     def scrape(self, url: str) -> dict:
